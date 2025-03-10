@@ -1,6 +1,7 @@
 package io.mosip.testrig.dslrig.packetcreator.service;
 
 
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -9,7 +10,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Properties;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;

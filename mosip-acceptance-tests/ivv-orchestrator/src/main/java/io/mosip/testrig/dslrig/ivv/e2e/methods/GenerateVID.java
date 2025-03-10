@@ -1,6 +1,5 @@
 package io.mosip.testrig.dslrig.ivv.e2e.methods;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,17 +11,17 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestException;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.authentication.fw.util.AuthenticationTestException;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.testscripts.PostWithBodyWithOtpGenerate;
-import io.mosip.testrig.apirig.testscripts.SimplePost;
+import io.mosip.testrig.apirig.auth.testscripts.PostWithBodyWithOtpGenerate;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.masterdata.testscripts.SimplePost;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
+import io.mosip.testrig.apirig.utils.AdminTestException;
+import io.mosip.testrig.apirig.utils.AuthenticationTestException;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.PersonaDataManager;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 import io.restassured.response.Response;
 
 public class GenerateVID extends BaseTestCaseUtil implements StepInterface {
@@ -34,7 +33,7 @@ public class GenerateVID extends BaseTestCaseUtil implements StepInterface {
 
 	SimplePost generatevidwithoutotp = new SimplePost();
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -49,8 +48,6 @@ public class GenerateVID extends BaseTestCaseUtil implements StepInterface {
 		String emailId = "";
 		boolean getOtpByPhone = Boolean.FALSE;
 		String vid = "";
-		// String transactionID = (step.getScenario().getId() +
-		// RandomStringUtils.randomNumeric(8)).substring(0, 10);
 		String transactionID = (step.getScenario().getId() + RandomStringUtils.randomNumeric(11));
 		transactionID = transactionID.substring(0, 10);
 		logger.info(transactionID);
@@ -64,7 +61,7 @@ public class GenerateVID extends BaseTestCaseUtil implements StepInterface {
 
 		}
 		if (step.getParameters().size() == 3 && step.getParameters().get(1).startsWith("$$")) {
-			uins = step.getParameters().get(1); // "$$vid=e2e_GenerateVID(Perpetual,$$uin,$$email)"
+			uins = step.getParameters().get(1);
 			if (uins.startsWith("$$")) {
 				uins = step.getScenario().getVariables().get(uins);
 				uinList = new ArrayList<>(Arrays.asList(uins.split("@@")));
@@ -77,7 +74,7 @@ public class GenerateVID extends BaseTestCaseUtil implements StepInterface {
 			uinList = new ArrayList<>(step.getScenario().getUinPersonaProp().stringPropertyNames());
 
 		if (step.getParameters().size() == 3 && step.getParameters().get(2).startsWith("$$")) {
-			emailId = step.getParameters().get(2); // "$$vid=e2e_GenerateVID(Perpetual,$$uin,$$email)"
+			emailId = step.getParameters().get(2);
 
 			if (emailId.contentEquals("$$phone"))
 				getOtpByPhone = true;

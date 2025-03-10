@@ -6,24 +6,22 @@ import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
-
 import com.nimbusds.jose.jwk.RSAKey;
-
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestException;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.authentication.fw.util.AuthenticationTestException;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
-import io.mosip.testrig.apirig.testscripts.GetWithParam;
-import io.mosip.testrig.apirig.testscripts.SimplePost;
-import io.mosip.testrig.apirig.testscripts.SimplePostForAutoGenIdForUrlEncoded;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.esignet.testscripts.GetWithParam;
+import io.mosip.testrig.apirig.esignet.testscripts.SimplePostForAutoGenId;
+import io.mosip.testrig.apirig.resident.testscripts.SimplePostForAutoGenIdForUrlEncoded;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
+import io.mosip.testrig.apirig.utils.AdminTestException;
+import io.mosip.testrig.apirig.utils.AuthenticationTestException;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.FeatureNotSupportedError;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.GlobalConstants;
 import io.mosip.testrig.dslrig.ivv.orchestrator.PacketUtility;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 import io.restassured.response.Response;
 
 public class UserInfo extends BaseTestCaseUtil implements StepInterface {
@@ -31,7 +29,7 @@ public class UserInfo extends BaseTestCaseUtil implements StepInterface {
 	private static final String AuthorizationCodeYml = "idaData/AuthorizationCode/AuthorizationCode.yml";
 	private static final String GenerateTokenYml = "idaData/GenerateToken/GenerateToken.yml";
 	private static final String GetUserInfoYml = "idaData/GetOidcUserInfo/GetOidcUserInfo.yml";
-	SimplePost authorizationCode = new SimplePost();
+	SimplePostForAutoGenId authorizationCode = new SimplePostForAutoGenId();
 	SimplePostForAutoGenIdForUrlEncoded generateToken = new SimplePostForAutoGenIdForUrlEncoded();
 	GetWithParam getUserInfo = new GetWithParam();
 	String clientId = "";
@@ -44,9 +42,9 @@ public class UserInfo extends BaseTestCaseUtil implements StepInterface {
 	String esignetAccessToken = "";
 	String data = "";
 	List<String> idType = BaseTestCase.getSupportedIdTypesValueFromActuator();
-	
+
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -54,9 +52,8 @@ public class UserInfo extends BaseTestCaseUtil implements StepInterface {
 
 	@Override
 	public void run() throws RigInternalError, FeatureNotSupportedError {
-		
-		// check if esignet is installed on the target system
-		if (ConfigManager.isInServiceNotDeployedList(GlobalConstants.ESIGNET)) {
+
+		if (dslConfigManager.isInServiceNotDeployedList(GlobalConstants.ESIGNET)) {
 			throw new FeatureNotSupportedError("eSignet is not deployed. Hence skipping the step");
 		}
 
@@ -132,7 +129,7 @@ public class UserInfo extends BaseTestCaseUtil implements StepInterface {
 
 				}
 
-			} catch (AuthenticationTestException | AdminTestException e) {
+			} catch (AuthenticationTestException | AdminTestException | NoSuchAlgorithmException e) {
 				this.hasError = true;
 				throw new RigInternalError(e.getMessage());
 
@@ -160,7 +157,7 @@ public class UserInfo extends BaseTestCaseUtil implements StepInterface {
 
 				}
 
-			} catch (AuthenticationTestException | AdminTestException e) {
+			} catch (AuthenticationTestException | AdminTestException | NoSuchAlgorithmException e) {
 				this.hasError = true;
 				throw new RigInternalError(e.getMessage());
 

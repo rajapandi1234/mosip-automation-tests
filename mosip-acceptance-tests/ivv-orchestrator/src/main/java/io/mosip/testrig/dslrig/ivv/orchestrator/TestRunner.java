@@ -13,14 +13,13 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.testng.TestNG;
 
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestUtil;
-import io.mosip.testrig.apirig.authentication.fw.util.OutputValidationUtil;
-import io.mosip.testrig.apirig.ida.certificate.KeyCloakUserAndAPIKeyGeneration;
-import io.mosip.testrig.apirig.ida.certificate.MispPartnerAndLicenseKeyGeneration;
-import io.mosip.testrig.apirig.ida.certificate.PartnerRegistration;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
-import io.mosip.testrig.apirig.testrunner.MockSMTPListener;
+import io.mosip.testrig.apirig.utils.AdminTestUtil;
+import io.mosip.testrig.apirig.utils.OutputValidationUtil;
+import io.mosip.testrig.apirig.utils.KeyCloakUserAndAPIKeyGeneration;
+import io.mosip.testrig.apirig.utils.MispPartnerAndLicenseKeyGeneration;
+import io.mosip.testrig.apirig.utils.PartnerRegistration;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
+import io.mosip.testrig.apirig.testrunner.OTPListener;
 
 public class TestRunner {
 	private static final Logger LOGGER = Logger.getLogger(TestRunner.class);
@@ -31,16 +30,18 @@ public class TestRunner {
 		if (checkRunType().equalsIgnoreCase("JAR")) {
 			extractResourceFromJar();
 		}
-		
+		BaseTestCase.setRunContext(checkRunType(), jarUrl);
 		copyTestResources();
 		BaseTestCase.environment = System.getProperty("env.user");
 		BaseTestCase.ApplnURI = System.getProperty("env.endpoint");
 		BaseTestCase.testLevel = System.getProperty("env.testLevel");
 
 		// Initializing or setting up execution
-		ConfigManager.init();
+//		ConfigManager.init();
+		dslConfigManager.init();
+		AdminTestUtil.init();
 		
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			LOGGER.setLevel(Level.ALL);
 		else
 			LOGGER.setLevel(Level.ERROR);
@@ -49,18 +50,17 @@ public class TestRunner {
 		BaseTestCase.initialize();
 		
 		BaseTestCase.languageList = BaseTestCase.getLanguageList();
-
 		// Selecting the language based on index for example- eng,ara,fra (To run suite
 		// in ara lang pass 1 in langselect property)
 		
-    if(ConfigManager.getLangselect() > BaseTestCase.languageList.size()-1)
+    if(dslConfigManager.getLangselect() > BaseTestCase.languageList.size()-1)
     	BaseTestCase.languageCode = BaseTestCase.languageList.get(0);
     else
-		BaseTestCase.languageCode = BaseTestCase.languageList.get(ConfigManager.getLangselect());
+		BaseTestCase.languageCode = BaseTestCase.languageList.get(dslConfigManager.getLangselect());
 
 		LOGGER.info("Current running language: " + BaseTestCase.languageCode);
 		
-		MockSMTPListener mockSMTPListener = new MockSMTPListener();
+		OTPListener mockSMTPListener = new OTPListener();
 		mockSMTPListener.run();
 		startTestRunner();
 	}
@@ -96,7 +96,7 @@ public class TestRunner {
 				+ "EXTENT" + "-run-" + System.currentTimeMillis() + "-report.html");
 		runner.run();
 		
-		MockSMTPListener mockSMTPListener = new MockSMTPListener();
+		OTPListener mockSMTPListener = new OTPListener();
 		mockSMTPListener.bTerminate = true;
 
 		System.exit(0);

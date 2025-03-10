@@ -7,18 +7,17 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.PacketUtility;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
 public class GetPacketTemplate extends BaseTestCaseUtil implements StepInterface {
 	static Logger logger = Logger.getLogger(GetPacketTemplate.class);
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -31,10 +30,7 @@ public class GetPacketTemplate extends BaseTestCaseUtil implements StepInterface
 		String process = null;
 		String personaPath = null;
 		Properties personaIdValue = null;
-		if (step.getParameters().isEmpty() && !step.getScenario().getGeneratedResidentData().isEmpty()) { // used to
-																											// child
-																											// packet
-																											// processing
+		if (step.getParameters().isEmpty() && !step.getScenario().getGeneratedResidentData().isEmpty()) {
 			JSONArray jsonArray = packetUtility.getTemplate(
 					new HashSet<String>(step.getScenario().getGeneratedResidentData()), "NEW",
 					step.getScenario().getCurrentStep(), step, qualityScore, genarateValidCbeff);
@@ -52,7 +48,7 @@ public class GetPacketTemplate extends BaseTestCaseUtil implements StepInterface
 				}
 				if (personaId.startsWith("$$")) {
 					personaPath = step.getScenario().getVariables().get(personaId);
-					step.getScenario().getResidentTemplatePaths().clear();// step.getScenario().getResidentTemplatePaths().clear();
+					step.getScenario().getResidentTemplatePaths().clear();
 				} else {
 					personaIdValue = PacketUtility.getParamsFromArg(personaId, "@@");
 					for (String id : personaIdValue.stringPropertyNames()) {

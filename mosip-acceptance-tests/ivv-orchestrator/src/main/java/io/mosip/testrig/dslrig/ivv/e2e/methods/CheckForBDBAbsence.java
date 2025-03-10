@@ -6,26 +6,19 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import io.mosip.kernel.biometrics.commons.CbeffValidator;
 import io.mosip.kernel.biometrics.entities.BIR;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import com.sun.jna.StringArray;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestException;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.authentication.fw.util.AuthenticationTestException;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.testscripts.GetWithParam;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.masterdata.testscripts.GetWithParam;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 import io.restassured.response.Response;
 
 public class CheckForBDBAbsence extends BaseTestCaseUtil implements StepInterface {
@@ -36,7 +29,7 @@ public class CheckForBDBAbsence extends BaseTestCaseUtil implements StepInterfac
 	private String decodedString;
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -65,27 +58,22 @@ public class CheckForBDBAbsence extends BaseTestCaseUtil implements StepInterfac
 			try {
 				checkForBDB.test(test);
 
-			Response response = checkForBDB.response;
-			JSONObject responseJson = new JSONObject(response.asString());
-			JSONObject responseData = responseJson.getJSONObject("response");
-			JSONArray responseArray = responseData.getJSONArray("documents");
+				Response response = checkForBDB.response;
+				JSONObject responseJson = new JSONObject(response.asString());
+				JSONObject responseData = responseJson.getJSONObject("response");
+				JSONArray responseArray = responseData.getJSONArray("documents");
 
-			String bioData = responseArray.getJSONObject(0).getString("value");
+				String bioData = responseArray.getJSONObject(0).getString("value");
+				Base64.Decoder decoder = Base64.getUrlDecoder();
 
-//				String cleanedString = cleanBase64String(bioData);
+				// Decode the base64 encoded string.
+				byte[] decodedBytes = decoder.decode(bioData);
 
-			Base64.Decoder decoder = Base64.getUrlDecoder();
-
-			// Decode the base64 encoded string.
-			byte[] decodedBytes = decoder.decode(bioData);
-
-			// Convert the decoded bytes to a string.
-			decodedString = new String(decodedBytes);
-
-			logger.info(decodedString);
-
-			BIR bir = null;
-			Map<String, String> finalMap = new HashMap<>();
+				// Convert the decoded bytes to a string.
+				decodedString = new String(decodedBytes);
+				logger.info(decodedString);
+				BIR bir = null;
+				Map<String, String> finalMap = new HashMap<>();
 				bir = CbeffValidator.getBIRFromXML(decodedBytes);
 
 				boolean isXmlValid = CbeffValidator.validateXML(bir);

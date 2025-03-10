@@ -8,20 +8,19 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.PacketUtility;
 import io.mosip.testrig.dslrig.ivv.orchestrator.TestRunner;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 import io.restassured.response.Response;
 
 public class GetResidentData extends BaseTestCaseUtil implements StepInterface {
 	static Logger logger = Logger.getLogger(GetResidentData.class);
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -30,21 +29,17 @@ public class GetResidentData extends BaseTestCaseUtil implements StepInterface {
 	@Override
 	public void run() throws RigInternalError {
 
-		int nofResident = 1;
 		String ageCategory = "";
 		Boolean bSkipGuardian = false;
 		String missFields = null;
 		String[] bioFlag = null;
 		HashMap<String, String> genderAndBioFlag = new HashMap<String, String>();
-		if (!step.getParameters().isEmpty() && step.getParameters().size() > 3) {
-			nofResident = Integer.parseInt(step.getParameters().get(0));
-			ageCategory = step.getParameters().get(1);
-			bSkipGuardian = Boolean.parseBoolean(step.getParameters().get(2));
+		if (!step.getParameters().isEmpty() && step.getParameters().size() >= 3) {
+			ageCategory = step.getParameters().get(0);
+			bSkipGuardian = Boolean.parseBoolean(step.getParameters().get(1));
 
-			/// Get Gender and Bio attributes miss flag
-
-			if (step.getParameters().get(3).contains("@@")) {
-				bioFlag = step.getParameters().get(3).split("@@");
+			if (step.getParameters().get(2).contains("@@")) {
+				bioFlag = step.getParameters().get(2).split("@@");
 				genderAndBioFlag.put("Gender", bioFlag[0]);
 				genderAndBioFlag.put("Iris", bioFlag[1]);
 				genderAndBioFlag.put("Finger", bioFlag[2]);
@@ -52,7 +47,7 @@ public class GetResidentData extends BaseTestCaseUtil implements StepInterface {
 
 			} else {
 
-				genderAndBioFlag.put("Gender", step.getParameters().get(3));
+				genderAndBioFlag.put("Gender", step.getParameters().get(2));
 				genderAndBioFlag.put("Iris", "true");
 				genderAndBioFlag.put("Finger", "true");
 				genderAndBioFlag.put("Face", "true");
@@ -61,8 +56,8 @@ public class GetResidentData extends BaseTestCaseUtil implements StepInterface {
 
 			// Get Miss attrobutes list
 
-			if (step.getParameters().size() > 4)
-				missFields = step.getParameters().get(4).replaceAll("@@", ",");
+			if (step.getParameters().size() > 3)
+				missFields = step.getParameters().get(3).replaceAll("@@", ",");
 
 		} else {
 			logger.warn("Input parameter missing [nofResident/bAdult/bSkipGuardian/gender]");
@@ -72,7 +67,7 @@ public class GetResidentData extends BaseTestCaseUtil implements StepInterface {
 
 		// Generate Resident for all ages
 		cleanData();
-		Response response = packetUtility.generateResident(nofResident, ageCategory, bSkipGuardian, missFields,
+		Response response = packetUtility.generateResident(ageCategory, bSkipGuardian, missFields,
 				genderAndBioFlag, step);
 		JSONObject jsonObject = new JSONObject(response.getBody().asString());
 		JSONArray resp = new JSONObject(response.getBody().asString()).getJSONArray("response");
@@ -111,10 +106,10 @@ public class GetResidentData extends BaseTestCaseUtil implements StepInterface {
 	}
 
 	private void cleanData() {
-		step.getScenario().getPridsAndRids().clear(); // step.getScenario().getPridsAndRids().clear();
-		step.getScenario().getUinReqIds().clear(); // step.getScenario().getUinReqIds().clear();
-		step.getScenario().getResidentTemplatePaths().clear();// step.getScenario().getResidentTemplatePaths().clear();
-		step.getScenario().getResidentPathsPrid().clear(); // esidentPathsPrid.clear();
-		step.getScenario().getTemplatePacketPath().clear();// step.getScenario().getTemplatePacketPath().clear();
+		step.getScenario().getPridsAndRids().clear();
+		step.getScenario().getUinReqIds().clear();
+		step.getScenario().getResidentTemplatePaths().clear();
+		step.getScenario().getResidentPathsPrid().clear();
+		step.getScenario().getTemplatePacketPath().clear();
 	}
 }

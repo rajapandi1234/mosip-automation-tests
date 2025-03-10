@@ -10,35 +10,27 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.testng.Reporter;
-
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestException;
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestUtil;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.authentication.fw.util.AuthenticationTestException;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
-import io.mosip.testrig.apirig.testscripts.BioAuth;
-import io.mosip.testrig.apirig.testscripts.DemoAuthSimplePostForAutoGenId;
-import io.mosip.testrig.apirig.testscripts.MultiFactorAuthNew;
-import io.mosip.testrig.apirig.testscripts.OtpAuth;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
+import io.mosip.testrig.apirig.utils.AdminTestUtil;
+import io.mosip.testrig.apirig.auth.testscripts.BioAuth;
+import io.mosip.testrig.apirig.auth.testscripts.DemoAuth;
+import io.mosip.testrig.apirig.auth.testscripts.MultiFactorAuthNew;
+import io.mosip.testrig.apirig.auth.testscripts.OtpAuthNew;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.dtos.Scenario;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.e2e.constant.E2EConstants;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.TestRunner;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
-//"e2e_multiFactorAuthentication(faceDevice,phoneNumber,UIN,$$uin,$$personaFilePath)"
 public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepInterface {
 	static Logger logger = Logger.getLogger(MultiFactorAuthentication.class);
 	private static final String MULTIFACTOR = "idaData/MultiFactorAuth/MultiFactorAuth.yml";
 	Properties deviceProp = null;
 	Properties uinResidentDataPathFinalProps = new Properties();
-	OtpAuth otpAuth = new OtpAuth();
-	MultiFactorAuthNew multiFactorAuth = new MultiFactorAuthNew();
-	BioAuth bioAuth = new BioAuth();
-	DemoAuthSimplePostForAutoGenId demoAuth = new DemoAuthSimplePostForAutoGenId();
 	List<String> demoAuthList = null;
 	List<String> bioAuthList = null;
 	String individualType = null;
@@ -55,9 +47,17 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 	String demoResponse = null;
 	String emailId = null;
 	List<String> idType = BaseTestCase.getSupportedIdTypesValueFromActuator();
-	
+
+	DemoAuth demoAuth = new DemoAuth();
+
+	BioAuth bioAuth = new BioAuth();
+
+	OtpAuthNew otpauth = new OtpAuthNew();
+
+	MultiFactorAuthNew multiFactorAuth = new MultiFactorAuthNew();
+
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -65,19 +65,16 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 
 	@Override
 	public void run() throws RigInternalError {
-		// AuthPartnerProcessor.startProcess();
-		// step.getScenario().getUinPersonaProp().put("2310290713",
-		// "C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\residents_8783170256176160783\\\\915849158491584.json");
-
 		List<String> demoFetchList = null;
 		TestCaseDTO test = null;
 
 		if (step.getParameters().isEmpty() || step.getParameters().size() < 1) {
 			logger.error("Parameter is  missing from DSL step");
-			this.hasError=true;throw new RigInternalError("Modality paramter is  missing in step: " + step.getName());
+			this.hasError = true;
+			throw new RigInternalError("Modality paramter is  missing in step: " + step.getName());
 		}
-		
-		if (step.getParameters().size() > 1 && step.getParameters().get(6).startsWith("$$")) { 
+
+		if (step.getParameters().size() > 1 && step.getParameters().get(6).startsWith("$$")) {
 			emailId = step.getParameters().get(6);
 			if (emailId.startsWith("$$")) {
 				emailId = step.getScenario().getVariables().get(emailId);
@@ -90,7 +87,8 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 					if (!StringUtils.isBlank(step.getParameters().get(i))) {
 						bioAuthList = Arrays.asList(step.getParameters().get(i).split("@@"));
 					} else {
-						bioAuthList = new ArrayList<String>(step.getScenario().getUinPersonaProp().stringPropertyNames());
+						bioAuthList = new ArrayList<String>(
+								step.getScenario().getUinPersonaProp().stringPropertyNames());
 					}
 				}
 
@@ -100,7 +98,8 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 						demoFetchList = new ArrayList<String>();
 						demoFetchList.add(E2EConstants.DEMOFETCH);
 					} else {
-						demoAuthList = new ArrayList<String>(step.getScenario().getUinPersonaProp().stringPropertyNames());
+						demoAuthList = new ArrayList<String>(
+								step.getScenario().getUinPersonaProp().stringPropertyNames());
 					}
 				}
 
@@ -123,7 +122,8 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 						uinList = new ArrayList<>();
 						uinList.add(individualIdAuth);// uin actual value
 					} else {
-						individualIdAuth = step.getScenario().getUinPersonaProp().stringPropertyNames().iterator().next();
+						individualIdAuth = step.getScenario().getUinPersonaProp().stringPropertyNames().iterator()
+								.next();
 						uinList = new ArrayList<>();
 						uinList.add(individualIdAuth);
 					}
@@ -170,25 +170,27 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 				if (casesListUIN != null) {
 					for (Object object : casesListUIN) {
 						test = (TestCaseDTO) object;
-						test = demoAuthE2eTest(demoFetchList, uin, test,step);
+						test = demoAuthE2eTest(demoFetchList, uin, test, step);
 						test = bioAuthE2eTest(bioAuthList, uin, test);
-						if(emailId==null ||(emailId!=null && emailId.isBlank())) {
+						if (emailId == null || (emailId != null && emailId.isBlank())) {
 							test = otpAuthE2eTest(uin, test);
 						}
-						
-						
+						String input = test.getInput();
+						input = JsonPrecondtion.parseAndReturnJsonContent(input,
+								"UIN", "individualIdType");
+						input = JsonPrecondtion.parseAndReturnJsonContent(input,
+								"UIN", "sendOtp.individualIdType");
+						test.setInput(input);
 						try {
-							try {
-								multiFactorAuth.test(test);
-							} catch (AdminTestException e) {
-								logger.error(e.getMessage());
-							}
-						} catch (AuthenticationTestException e) {
+							multiFactorAuth.test(test);
+						} catch (Exception e) {
 							logger.error(e.getMessage());
+							this.hasError = true;
+							throw new RigInternalError(e.getMessage());
 						}
+
 					}
 				}
-
 
 			}
 
@@ -220,21 +222,27 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 				if (casesListVID != null) {
 					for (Object object : casesListVID) {
 						test = (TestCaseDTO) object;
-						test = demoAuthE2eTest(demoFetchList, vid, test,step);
+						test = demoAuthE2eTest(demoFetchList, vid, test, step);
 						test = bioAuthE2eTest(bioAuthList, vid, test);
-						test = otpAuthE2eTest(vid, test);
-						try {
-							try {
-								multiFactorAuth.test(test);
-							} catch (AdminTestException e) {
-								logger.error(e.getMessage());
-							}
-						} catch (AuthenticationTestException e) {
-							logger.error(e.getMessage());
+						if (emailId == null || (emailId != null && emailId.isBlank())) {
+							test = otpAuthE2eTest(vid, test);
 						}
+						String input = test.getInput();
+						input = JsonPrecondtion.parseAndReturnJsonContent(input,
+								"VID", "individualIdType");
+						input = JsonPrecondtion.parseAndReturnJsonContent(input,
+								"VID", "sendOtp.individualIdType");
+						test.setInput(input);
+						try {
+							multiFactorAuth.test(test);
+						} catch (Exception e) {
+							logger.error(e.getMessage());
+							this.hasError = true;
+							throw new RigInternalError(e.getMessage());
+						}
+
 					}
 				}
-
 
 			}
 
@@ -247,12 +255,12 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 		test.setEndPoint(test.getEndPoint().replace("uinnumber", individualIdAuth));
 
 		String input = test.getInput();
-		input = JsonPrecondtion.parseAndReturnJsonContent(input, individualIdAuth, "individualId");
+		input = JsonPrecondtion.parseAndReturnJsonContent(input, individualIdAuth, "sendOtp.individualId");
 		input = JsonPrecondtion.parseAndReturnJsonContent(input, emailId, "otp");
-		/*
-		 * input = JsonPrecondtion.parseAndReturnJsonContent(input, individualType,
-		 * "individualIdType");
-		 */
+
+		//		input = JsonPrecondtion.parseAndReturnJsonContent(input, individualType,
+		//				"individualIdType");
+
 		/*
 		 * input = JsonPrecondtion.parseAndReturnJsonContent(input, individualIdAuth,
 		 * "sendOtp.individualId"); input =
@@ -265,8 +273,8 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 
 	}
 
-	private TestCaseDTO demoAuthE2eTest(List<String> demoFetchList, String individualIdAuth, TestCaseDTO testInput,Scenario.Step step)
-			throws RigInternalError {
+	private TestCaseDTO demoAuthE2eTest(List<String> demoFetchList, String individualIdAuth, TestCaseDTO testInput,
+			Scenario.Step step) throws RigInternalError {
 
 		String personFilePathvalue = null;
 		if (step.getParameters().size() > 4) {
@@ -277,10 +285,11 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 			}
 		} else if (step.getScenario().getUinPersonaProp().containsKey(individualIdAuth))
 			personFilePathvalue = step.getScenario().getUinPersonaProp().getProperty(individualIdAuth);
-		else
-		{this.hasError=true;	throw new RigInternalError("Persona doesn't exist for the given UIN " + individualIdAuth);
+		else {
+			this.hasError = true;
+			throw new RigInternalError("Persona doesn't exist for the given UIN " + individualIdAuth);
 		}
-		demoResponse = packetUtility.retrieveBiometric(personFilePathvalue, demoFetchList,step);
+		demoResponse = packetUtility.retrieveBiometric(personFilePathvalue, demoFetchList, step);
 
 		// testInput.setEndPoint(testInput.getEndPoint().replace("$PartnerKey$",
 		// partnerKeyUrl));
@@ -304,17 +313,20 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 				demoFieldValueKey = E2EConstants.DEMOAGE;
 				break;
 			default:
-				this.hasError=true;throw new RigInternalError("Given DEMO doesn't match with the options in the script");
+				this.hasError = true;
+				throw new RigInternalError("Given DEMO doesn't match with the options in the script");
 			}
 
 			demoValue = JsonPrecondtion.getValueFromJson(demoResponse,
 					E2EConstants.DEMOFETCH + "." + demoFieldValueKey);
-			if (demoValue == null)
-				{this.hasError=true;throw new RigInternalError("Received null value from Persona for" + demoField);}
+			if (demoValue == null) {
+				this.hasError = true;
+				throw new RigInternalError("Received null value from Persona for" + demoField);
+			}
 			input = testInput.getInput();
 
-			input = JsonPrecondtion.parseAndReturnJsonContent(input, demoField, "key");
-			input = JsonPrecondtion.parseAndReturnJsonContent(input, demoValue, "value");
+			input = JsonPrecondtion.parseAndReturnJsonContent(input, demoField, "identityRequest.key");
+			input = JsonPrecondtion.parseAndReturnJsonContent(input, demoValue, "identityRequest.value");
 			// testInput=filterOutTestCase(testObj,testFilterKey);
 			testInput.setInput(input);
 		}
@@ -330,9 +342,11 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 				deviceInfoFilePath = TestRunner.getExternalResourcePath()
 						+ props.getProperty("ivv.path.deviceinfo.folder") + deviceInfoFilePath + ".properties";
 				deviceProp = AdminTestUtil.getproperty(deviceInfoFilePath);
-			} else
-				{this.hasError=true;throw new RigInternalError("deviceInfo file path Parameter is  missing from DSL step");
-				}String personFilePathvalue = null;
+			} else {
+				this.hasError = true;
+				throw new RigInternalError("deviceInfo file path Parameter is  missing from DSL step");
+			}
+			String personFilePathvalue = null;
 			if (step.getParameters().size() > 4) {
 				String _personFilePath = step.getParameters().get(4);
 				if (_personFilePath.startsWith("$$")) {
@@ -341,10 +355,10 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 				}
 			} else if (step.getScenario().getUinPersonaProp().containsKey(uin))
 				personFilePathvalue = step.getScenario().getUinPersonaProp().getProperty(uin);
-			else
-				{
-				this.hasError=true;throw new RigInternalError("Persona doesn't exist for the given UIN " + uin);
-				}
+			else {
+				this.hasError = true;
+				throw new RigInternalError("Persona doesn't exist for the given UIN " + uin);
+			}
 
 			String bioType = null, bioSubType = null;
 			List<String> modalityList = new ArrayList<>();
@@ -371,11 +385,12 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 					modalityKeyTogetBioValue = bioSubType;
 					break;
 				default:
-					this.hasError=true;throw new RigInternalError("Given BIO Type in device property file is not valid");
+					this.hasError = true;
+					throw new RigInternalError("Given BIO Type in device property file is not valid");
 				}
 			}
 
-			multiFactorResponse = packetUtility.retrieveBiometric(personFilePathvalue, modalityList,step);
+			multiFactorResponse = packetUtility.retrieveBiometric(personFilePathvalue, modalityList, step);
 			logger.info("saddjha");
 			if (multiFactorResponse != null && !multiFactorResponse.isEmpty() && modalityKeyTogetBioValue != null) {
 				String bioValue = JsonPrecondtion.getValueFromJson(multiFactorResponse, modalityKeyTogetBioValue);
@@ -412,11 +427,14 @@ public class MultiFactorAuthentication extends BaseTestCaseUtil implements StepI
 		input = JsonPrecondtion.parseAndReturnJsonContent(input, deviceProps.getProperty("model"), "model");
 		input = JsonPrecondtion.parseAndReturnJsonContent(input, deviceProps.getProperty("serialNo"), "serialNo");
 		input = JsonPrecondtion.parseAndReturnJsonContent(input, deviceProps.getProperty("type"), "type");
-		/*
-		 * input = JsonPrecondtion.parseAndReturnJsonContent(input,
-		 * deviceProps.getProperty("individualIdType"), "individualIdType");
-		 */
-		input = JsonPrecondtion.parseAndReturnJsonContent(input, bioValue, "bioValue");
+		input = JsonPrecondtion.parseAndReturnJsonContent(input, uin, "sendOtp.individualId");
+		input = JsonPrecondtion.parseAndReturnJsonContent(input, emailId, "otpChannel");
+
+		//		 input = JsonPrecondtion.parseAndReturnJsonContent(input,
+		//		  deviceProps.getProperty("individualIdType"), "individualIdType");
+
+		input = JsonPrecondtion.parseAndReturnJsonContent(input, bioValue, "identityRequest.bioValue");
+
 		test.setInput(input);
 
 		Reporter.log("<b><u>" + test.getTestCaseName() + "_" + modalityToLog + "</u></b>");

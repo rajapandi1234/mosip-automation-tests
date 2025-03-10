@@ -4,23 +4,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestUtil;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
-import io.mosip.testrig.apirig.testscripts.EsignetBioAuth;
+import io.mosip.testrig.apirig.utils.AdminTestUtil;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.esignet.testscripts.EsignetBioAuth;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.FeatureNotSupportedError;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.e2e.constant.E2EConstants;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.TestRunner;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
 public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepInterface {
 	public static Logger logger = Logger.getLogger(BioEsignetAuthentication.class);
@@ -29,9 +27,9 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 	Properties uinResidentDataPathFinalProps = new Properties();
 	EsignetBioAuth esignetBioAuth = new EsignetBioAuth();
 	String bioResponse = null;
-	
+
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -39,9 +37,9 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 
 	@Override
 	public void run() throws RigInternalError, FeatureNotSupportedError {
-		
+
 		// check if esignet is installed on the target system
-		if (ConfigManager.isInServiceNotDeployedList("eSignet")) {
+		if (dslConfigManager.isInServiceNotDeployedList("eSignet")) {
 			throw new FeatureNotSupportedError("eSignet is not deployed. Hence skipping the step");
 		}
 
@@ -55,12 +53,11 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 		Object[] casesListUIN = null;
 		Object[] casesListVID = null;
 		List<String> idType = BaseTestCase.getSupportedIdTypesValueFromActuator();
-		
-		
 
 		if (step.getParameters() == null || step.getParameters().isEmpty() || step.getParameters().size() < 1) {
 			logger.error("Parameter is  missing from DSL step");
-			this.hasError=true;throw new RigInternalError("Modality paramter is  missing in step: " + step.getName());
+			this.hasError = true;
+			throw new RigInternalError("Modality paramter is  missing in step: " + step.getName());
 		} else {
 			deviceInfoFilePath = step.getParameters().get(0);
 			if (!StringUtils.isBlank(deviceInfoFilePath)) {
@@ -68,8 +65,10 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 						+ props.getProperty("ivv.path.deviceinfo.folder") + deviceInfoFilePath + ".properties";
 				deviceProp = AdminTestUtil.getproperty(deviceInfoFilePath);
 			} else {
-				this.hasError=true;	throw new RigInternalError("deviceInfo file path Parameter is  missing from DSL step");
-		}}
+				this.hasError = true;
+				throw new RigInternalError("deviceInfo file path Parameter is  missing from DSL step");
+			}
+		}
 		if (step.getParameters().size() == 4) { // "e2e_BioEsignetAuthentication(faceDevice,$$uin,$$personaFilePath,$$transactionId,$$vid)"
 			uins = step.getParameters().get(1);
 			if (!StringUtils.isBlank(uins))
@@ -108,7 +107,8 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 
 		if (step.getParameters() == null || step.getParameters().isEmpty() || step.getParameters().size() < 1) {
 			logger.error("transactionId parameter is  missing from DSL step");
-			this.hasError=true;throw new RigInternalError("transactionId paramter is  missing in step: " + step.getName());
+			this.hasError = true;
+			throw new RigInternalError("transactionId paramter is  missing in step: " + step.getName());
 		} else {
 			transactionId1 = (String) step.getScenario().getOidcClientProp().get("transactionId1");
 			// transactionId1 = step.getParameters().get(3);
@@ -119,7 +119,8 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 
 		if (step.getParameters() == null || step.getParameters().isEmpty() || step.getParameters().size() < 1) {
 			logger.error("transactionId parameter is  missing from DSL step");
-			this.hasError=true;throw new RigInternalError("transactionId paramter is  missing in step: " + step.getName());
+			this.hasError = true;
+			throw new RigInternalError("transactionId paramter is  missing in step: " + step.getName());
 		} else {
 			transactionId2 = (String) step.getScenario().getOidcClientProp().get("transactionId2");
 			// transactionId2 = step.getParameters().get(5);
@@ -132,10 +133,10 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 			String personFilePathvalue = null;
 			if (step.getScenario().getUinPersonaProp().containsKey(uin))
 				personFilePathvalue = step.getScenario().getUinPersonaProp().getProperty(uin);
-			else
-				{
-				this.hasError=true;throw new RigInternalError("Persona doesn't exist for the given UIN " + uin);
-				}
+			else {
+				this.hasError = true;
+				throw new RigInternalError("Persona doesn't exist for the given UIN " + uin);
+			}
 
 			String bioType = null, bioSubType = null;
 			List<String> modalityList = new ArrayList<>();
@@ -162,14 +163,12 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 					modalityKeyTogetBioValue = bioSubType;
 					break;
 				default:
-					this.hasError=true;throw new RigInternalError("Given BIO Type in device property file is not valid");
+					this.hasError = true;
+					throw new RigInternalError("Given BIO Type in device property file is not valid");
 				}
 			}
 
-			bioResponse = packetUtility.retrieveBiometric(personFilePathvalue, modalityList,step);
-
-			//System.out.println("bioMetricValue= " + bioResponse);
-
+			bioResponse = packetUtility.retrieveBiometric(personFilePathvalue, modalityList, step);
 			String fileName = AuthenticateUser;
 			esignetBioAuth.isInternal = false;
 			Object[] casesList = esignetBioAuth.getYmlTestData(fileName);
@@ -179,26 +178,23 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 
 				casesListUIN = esignetBioAuth.getYmlTestData(fileName);
 
-			}
-
-			else if (BaseTestCase.getSupportedIdTypesValueFromActuator().contains("VID")
+			} else if (BaseTestCase.getSupportedIdTypesValueFromActuator().contains("VID")
 					|| BaseTestCase.getSupportedIdTypesValueFromActuator().contains("vid")) {
 				casesListVID = esignetBioAuth.getYmlTestData(fileName);
-			}
-
-			else {
+			} else {
 				casesListUIN = esignetBioAuth.getYmlTestData(fileName);
 				casesListVID = esignetBioAuth.getYmlTestData(fileName);
 			}
-
 			if (bioResponse != null && !bioResponse.isEmpty() && modalityKeyTogetBioValue != null) {
 				String bioValue = JsonPrecondtion.getValueFromJson(bioResponse, modalityKeyTogetBioValue);
 
-				if (bioValue == null || bioValue.length() < 100)
-					{this.hasError=true;throw new RigInternalError(
+				if (bioValue == null || bioValue.length() < 100) {
+					this.hasError = true;
+					throw new RigInternalError(
 							"Not able to get the bio value for field " + modalityToLog + " from persona");
-				
-					}if (idType.contains("UIN") || idType.contains("uin")) {
+
+				}
+				if (idType.contains("UIN") || idType.contains("uin")) {
 					casesListUIN = esignetBioAuth.getYmlTestData(fileName);
 				}
 
@@ -206,12 +202,13 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 
 					for (Object object : casesList) {
 						TestCaseDTO test = (TestCaseDTO) object;
-                        String input = test.getInput();
-						
-						input = JsonPrecondtion.parseAndReturnJsonContent(input, step.getScenario().getOidcClientProp().getProperty("urlEncodedResp1"), "encodedHash");
-						
+						String input = test.getInput();
+
+						input = JsonPrecondtion.parseAndReturnJsonContent(input,
+								step.getScenario().getOidcClientProp().getProperty("urlEncodedResp1"), "encodedHash");
+
 						packetUtility.esignetBioAuth(modalityToLog, bioValue, uin, transactionId1, deviceProp, test,
-								esignetBioAuth,input,step);
+								esignetBioAuth, input, step);
 					}
 				}
 
@@ -222,10 +219,10 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 			String personFilePathvalue = null;
 			if (step.getScenario().getVidPersonaProp().containsKey(vid))
 				personFilePathvalue = step.getScenario().getVidPersonaProp().getProperty(vid);
-			else
-				{
-				this.hasError=true;throw new RigInternalError("Persona doesn't exist for the given UIN " + vid);
-				}
+			else {
+				this.hasError = true;
+				throw new RigInternalError("Persona doesn't exist for the given UIN " + vid);
+			}
 
 			String bioType = null, bioSubType = null;
 			List<String> modalityList = new ArrayList<>();
@@ -252,13 +249,14 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 					modalityKeyTogetBioValue = bioSubType;
 					break;
 				default:
-					this.hasError=true;throw new RigInternalError("Given BIO Type in device property file is not valid");
+					this.hasError = true;
+					throw new RigInternalError("Given BIO Type in device property file is not valid");
 				}
 			}
 
-			bioResponse = packetUtility.retrieveBiometric(personFilePathvalue, modalityList,step);
+			bioResponse = packetUtility.retrieveBiometric(personFilePathvalue, modalityList, step);
 
-			//System.out.println("bioMetricValue= " + bioResponse);
+			// System.out.println("bioMetricValue= " + bioResponse);
 
 			String fileName = AuthenticateUser;
 			esignetBioAuth.isInternal = false;
@@ -284,10 +282,12 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 			if (bioResponse != null && !bioResponse.isEmpty() && modalityKeyTogetBioValue != null) {
 				String bioValue = JsonPrecondtion.getValueFromJson(bioResponse, modalityKeyTogetBioValue);
 
-				if (bioValue == null || bioValue.length() < 100)
-					{this.hasError=true;throw new RigInternalError(
+				if (bioValue == null || bioValue.length() < 100) {
+					this.hasError = true;
+					throw new RigInternalError(
 							"Not able to get the bio value for field " + modalityToLog + " from persona");
-					}if (idType.contains("VID") || idType.contains("vid")) {
+				}
+				if (idType.contains("VID") || idType.contains("vid")) {
 					casesListVID = esignetBioAuth.getYmlTestData(fileName);
 				}
 
@@ -296,9 +296,10 @@ public class BioEsignetAuthentication extends BaseTestCaseUtil implements StepIn
 					for (Object object : casesList) {
 						TestCaseDTO test = (TestCaseDTO) object;
 						String input = test.getInput();
-						input = JsonPrecondtion.parseAndReturnJsonContent(input, step.getScenario().getOidcClientProp().getProperty("urlEncodedResp2"), "encodedHash");
+						input = JsonPrecondtion.parseAndReturnJsonContent(input,
+								step.getScenario().getOidcClientProp().getProperty("urlEncodedResp2"), "encodedHash");
 						packetUtility.esignetBioAuth(modalityToLog, bioValue, vid, transactionId2, deviceProp, test,
-								esignetBioAuth, input,step);
+								esignetBioAuth, input, step);
 					}
 				}
 

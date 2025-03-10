@@ -6,24 +6,22 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import io.mosip.testrig.apirig.global.utils.GlobalConstants;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.kernel.util.KernelAuthentication;
-import io.mosip.testrig.apirig.service.BaseTestCase;
+import io.mosip.testrig.apirig.utils.GlobalConstants;
+import io.mosip.testrig.apirig.utils.KernelAuthentication;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
-
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 import io.restassured.response.Response;
 
 public class GetBlocklistedWord extends BaseTestCaseUtil implements StepInterface {
 
 	static Logger logger = Logger.getLogger(GetBlocklistedWord.class);
 	KernelAuthentication kernelAuthLib = new KernelAuthentication();
-	
+
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -46,11 +44,11 @@ public class GetBlocklistedWord extends BaseTestCaseUtil implements StepInterfac
 				JSONObject jsonObject = new JSONObject(response.getBody().asString());
 				JSONArray blocklistedWords = jsonObject.getJSONObject("response").getJSONArray("blocklistedwords");
 
-					blocklistedWord = blocklistedWords.getJSONObject(0).getString("word");
-					logger.info("blocklistedWord is :" + blocklistedWord);
-					if (step.getOutVarName() != null)
-						step.getScenario().getVariables().put(step.getOutVarName(), blocklistedWord);
-					return;
+				blocklistedWord = blocklistedWords.getJSONObject(0).getString("word");
+				logger.info("blocklistedWord is :" + blocklistedWord);
+				if (step.getOutVarName() != null)
+					step.getScenario().getVariables().put(step.getOutVarName(), blocklistedWord);
+				return;
 			}
 
 		} catch (Exception e) {

@@ -28,6 +28,7 @@ import io.mosip.testrig.dslrig.dataprovider.models.MosipIndividualTypeModel;
 import io.mosip.testrig.dslrig.dataprovider.models.MosipLanguage;
 import io.mosip.testrig.dslrig.dataprovider.models.MosipPreRegLoginConfig;
 import io.mosip.testrig.dslrig.dataprovider.models.Name;
+import io.mosip.testrig.dslrig.dataprovider.models.NrcId;
 import io.mosip.testrig.dslrig.dataprovider.models.ResidentModel;
 import io.mosip.testrig.dslrig.dataprovider.preparation.MosipMasterData;
 import io.mosip.testrig.dslrig.dataprovider.util.CommonUtil;
@@ -58,7 +59,7 @@ public class ResidentDataProvider {
 	
 	public ResidentDataProvider() {
 		attributeList = new Properties();
-		attributeList.put(ResidentAttribute.RA_Count, 1);
+		//attributeList.put(ResidentAttribute.RA_Count, 1);
 		//attributeList.put(ResidentAttribute.RA_PRIMARAY_LANG, DataProviderConstants.LANG_CODE_ENGLISH);
 		//attributeList.put(ResidentAttribute.RA_Country, "PHIL");
 		RestClient.clearToken();
@@ -73,7 +74,7 @@ public class ResidentDataProvider {
 		attributes.forEach( (k,v) ->{
 			attributeList.put(k, v);
 		});
-		attributeList.put(ResidentAttribute.RA_Count, 1);
+		//attributeList.put(ResidentAttribute.RA_Count, 1);
 		attributeList.put(ResidentAttribute.RA_Age, ResidentAttribute.RA_Adult);
 		attributeList.put(ResidentAttribute.RA_Gender, Gender.Any);
 		
@@ -86,14 +87,15 @@ public class ResidentDataProvider {
 		boolean bDirty = false;
 		
 		if(bioType.equalsIgnoreCase("finger")) {
-			BiometricDataModel bioData = BiometricDataProvider.getBiometricData(true,contextKey);
+			BiometricDataModel bioData = BiometricDataProvider.updateFingerData(contextKey);
 			model.getBiometric().setFingerPrint( bioData.getFingerPrint());
 			model.getBiometric().setFingerHash( bioData.getFingerHash());
+			model.getBiometric().setFingerRaw(bioData.getFingerRaw());
 			bDirty = true;
 		}
 		else
 		if(bioType.equalsIgnoreCase("iris")) {
-			List<IrisDataModel> iris = BiometricDataProvider.generateIris(1,contextKey);
+			List<IrisDataModel> iris = BiometricDataProvider.updateIris(contextKey);
 			if(iris != null && !iris.isEmpty()) {
 				model.getBiometric().setIris(iris.get(0));
 				bDirty = true;
@@ -102,9 +104,7 @@ public class ResidentDataProvider {
 		else
 		if(bioType.equalsIgnoreCase("face")) {
 			BiometricDataModel bioData = model.getBiometric();
-//			byte[][] faceData = PhotoProvider.getPhoto(CommonUtil.generateRandomNumbers(1, DataProviderConstants.MAX_PHOTOS, 1)[0], 
-//					model.getGender().name() , contextKey);
-			byte[][] faceData = PhotoProvider.getPhoto(contextKey);
+			byte[][] faceData = BiometricDataProvider.updateFaceData(contextKey);
 			bioData.setEncodedPhoto(
 					Base64.getEncoder().encodeToString(faceData[0]));
 			bioData.setRawFaceData(faceData[1]);
@@ -117,6 +117,26 @@ public class ResidentDataProvider {
 			 
 		return model;
 	}
+	
+	public static ResidentModel updateBiometricWithTestPersona(ResidentModel model, ResidentModel testModel,
+			String bioType, String contextKey) throws Exception {
+
+		if (bioType.equalsIgnoreCase("finger")) {
+
+			model.getBiometric().setFingerHash(testModel.getBiometric().getFingerHash());
+			model.getBiometric().setFingerPrint(testModel.getBiometric().getFingerPrint());
+			model.getBiometric().setFingerRaw(testModel.getBiometric().getFingerRaw());
+		} else if (bioType.equalsIgnoreCase("iris")) {
+			model.getBiometric().setIris(testModel.getBiometric().getIris());
+		} else if (bioType.equalsIgnoreCase("face")) {
+
+			model.getBiometric().setEncodedPhoto(testModel.getBiometric().getEncodedPhoto());
+			model.getBiometric().setFaceHash(testModel.getBiometric().getFaceHash());
+			model.getBiometric().setRawFaceData(testModel.getBiometric().getRawFaceData());
+		}
+		return model;
+	}
+	
 	private static String[] getConfiguredLanguages(String contextKey) {
 		String [] lang_arr = null;
 		List<String> langs= new ArrayList<String>();
@@ -190,7 +210,7 @@ public class ResidentDataProvider {
 		
 		List<ResidentModel> residents = new ArrayList<ResidentModel>();
 		
-		int count = (int) attributeList.get(ResidentAttribute.RA_Count);
+		int count = 1;
 		Gender gender =  (Gender) attributeList.get(ResidentAttribute.RA_Gender);
 		String primary_lang = (String) attributeList.get(ResidentAttribute.RA_PRIMARAY_LANG);
 		String sec_lang = (String) attributeList.get(ResidentAttribute.RA_SECONDARY_LANG);
@@ -295,6 +315,7 @@ public class ResidentDataProvider {
 		}
 
 		List<Contact> contacts = ContactProvider.generate(eng_names, count);
+		List<NrcId> nrcIds = NrcIdProvider.generate( count);
 		ApplicationConfigIdSchema locations = LocationProvider.generate(primary_lang, count,contextKey);
 		ApplicationConfigIdSchema locations_secLang  = null;
 		if(sec_lang != null)
@@ -346,6 +367,7 @@ public class ResidentDataProvider {
 			if(bloodGroups != null && !bloodGroups.isEmpty())
 				res.setBloodgroup(bloodGroups.get(res.getPrimaryLanguage()).get(i));
 			res.setContact(contacts.get(i));
+			res.setNrcId(nrcIds.get(i));
 			res.setDob( DateOfBirthProvider.generate((ResidentAttribute) attributeList.get(ResidentAttribute.RA_Age),contextKey));
 			ResidentAttribute age =  (ResidentAttribute) attributeList.get(ResidentAttribute.RA_Age);
 			Boolean skipGaurdian = false;
@@ -499,7 +521,7 @@ public class ResidentDataProvider {
 	public static void main(String[] args) throws Exception {
 		
 		ResidentDataProvider residentProvider = new ResidentDataProvider();
-		residentProvider.addCondition(ResidentAttribute.RA_Count, 1)
+		residentProvider
 		.addCondition(ResidentAttribute.RA_SECONDARY_LANG, "ara")
 		.addCondition(ResidentAttribute.RA_Gender, Gender.Any)
 		.addCondition(ResidentAttribute.RA_Age, ResidentAttribute.RA_Adult);

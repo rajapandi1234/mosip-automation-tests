@@ -2,11 +2,10 @@ package io.mosip.testrig.dslrig.ivv.e2e.methods;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
 public class UpdatePreRegStatus extends BaseTestCaseUtil implements StepInterface {
 	String status = "Pending_Appointment";
@@ -14,7 +13,7 @@ public class UpdatePreRegStatus extends BaseTestCaseUtil implements StepInterfac
 	public static Logger logger = Logger.getLogger(UpdatePreRegStatus.class);
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);

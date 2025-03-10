@@ -21,16 +21,15 @@ import org.testng.annotations.Test;
 import org.testng.internal.BaseTestMethod;
 import org.testng.internal.TestResult;
 
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestException;
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestUtil;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.dto.OutputValidationDto;
-import io.mosip.testrig.apirig.authentication.fw.util.AuthenticationTestException;
-import io.mosip.testrig.apirig.authentication.fw.util.OutputValidationUtil;
-import io.mosip.testrig.apirig.authentication.fw.util.ReportUtil;
-import io.mosip.testrig.apirig.global.utils.GlobalConstants;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
+import io.mosip.testrig.apirig.utils.AdminTestException;
+import io.mosip.testrig.apirig.utils.AdminTestUtil;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.dto.OutputValidationDto;
+import io.mosip.testrig.apirig.utils.AuthenticationTestException;
+import io.mosip.testrig.apirig.utils.GlobalConstants;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
+import io.mosip.testrig.apirig.utils.ConfigManager;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
 import io.mosip.testrig.apirig.testrunner.HealthChecker;
 import io.restassured.response.Response;
 
@@ -43,7 +42,7 @@ public class GetWithParam extends AdminTestUtil implements ITest {
 
 	@BeforeClass
 	public static void setLogLevel() {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -82,7 +81,7 @@ public class GetWithParam extends AdminTestUtil implements ITest {
 	@Test(dataProvider = "testcaselist")
 	public void test(TestCaseDTO testCaseDTO) throws AuthenticationTestException, AdminTestException {
 		testCaseName = testCaseDTO.getTestCaseName();
-		testCaseName = isTestCaseValidForExecution(testCaseDTO);
+//		testCaseName = isTestCaseValidForExecution(testCaseDTO);
 		if (HealthChecker.signalTerminateExecution) {
 			throw new SkipException(GlobalConstants.TARGET_ENV_HEALTH_CHECK_FAILED + HealthChecker.healthCheckFailureMapS);
 		}
@@ -122,7 +121,7 @@ public class GetWithParam extends AdminTestUtil implements ITest {
 
 		else {
 			if (testCaseName.contains("ESignet_")) {
-				String tempUrl = ConfigManager.getEsignetBaseUrl();
+				String tempUrl = dslConfigManager.getEsignetBaseUrl();
 				response = getWithPathParamAndCookie(tempUrl + testCaseDTO.getEndPoint(),
 						getJsonFromTemplate(testCaseDTO.getInput(), testCaseDTO.getInputTemplate()), COOKIENAME,
 						testCaseDTO.getRole(), testCaseDTO.getTestCaseName());

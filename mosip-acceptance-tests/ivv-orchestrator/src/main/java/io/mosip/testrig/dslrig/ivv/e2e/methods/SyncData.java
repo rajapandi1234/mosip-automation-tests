@@ -5,19 +5,19 @@ import java.util.HashMap;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.SyncDataHelper;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
 public class SyncData extends BaseTestCaseUtil implements StepInterface {
 	static Logger logger = Logger.getLogger(SyncData.class);
 
 	SyncDataHelper syncDataHelper = new SyncDataHelper();
-	
+
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -61,7 +61,6 @@ public class SyncData extends BaseTestCaseUtil implements StepInterface {
 
 			if (step.getOutVarName() != null) {
 				machineDetailsmap.put("keyindex", keyindex);
-				// step.getScenario().getVariables().put(step.getOutVarName(), keyIndex);
 				step.getScenario().getVariables().putAll(machineDetailsmap);
 			}
 			break;

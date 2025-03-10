@@ -5,27 +5,24 @@ import java.util.HashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.testng.Reporter;
 
-import io.mosip.testrig.apirig.authentication.fw.util.ReportUtil;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.kernel.util.KernelAuthentication;
+import io.mosip.testrig.apirig.utils.KernelAuthentication;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.PersonaDataManager;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 import io.restassured.response.Response;
 
 public class GetUINByRid extends BaseTestCaseUtil implements StepInterface {
 
 	private String getIdentityUrl = "/resident/uin/";
-	// private String identitypath = "preReg/identity/";
 	static Logger logger = Logger.getLogger(GetUINByRid.class);
 	KernelAuthentication kauth = new KernelAuthentication();
 	Boolean isForChildPacket = false;
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -34,9 +31,7 @@ public class GetUINByRid extends BaseTestCaseUtil implements StepInterface {
 	@SuppressWarnings("static-access")
 	@Override
 	public void run() throws RigInternalError {
-		// must call e2e_wait() before generating uin
-		if (!step.getParameters().isEmpty() && !(step.getParameters().get(0).startsWith("$$"))) { // used for child
-																									// packet processing
+		if (!step.getParameters().isEmpty() && !(step.getParameters().get(0).startsWith("$$"))) {
 			isForChildPacket = Boolean.parseBoolean(step.getParameters().get(0));
 			if (isForChildPacket && !StringUtils.isEmpty(step.getScenario().getRid_updateResident())) {
 				HashMap<String, String> rid = new HashMap<>();
@@ -82,7 +77,7 @@ public class GetUINByRid extends BaseTestCaseUtil implements StepInterface {
 					logger.error("Issue while fetching identity for RID: " + rid + " Response: " + response.toString());
 					this.hasError = true;
 					throw new RigInternalError("Not able to Fetch identity for RID: " + rid);
-				}				
+				}
 				PersonaDataManager.setVariableValue(step.getScenario().getId(), "UIN", uin);
 			}
 		}

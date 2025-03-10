@@ -7,14 +7,13 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
-import io.mosip.testrig.apirig.testscripts.DeleteWithParam;
-import io.mosip.testrig.apirig.testscripts.GetWithParam;
-import io.mosip.testrig.apirig.testscripts.PatchWithPathParam;
-import io.mosip.testrig.apirig.testscripts.SimplePost;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.masterdata.testscripts.GetWithParam;
+import io.mosip.testrig.apirig.masterdata.testscripts.PatchWithPathParam;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
+import io.mosip.testrig.apirig.masterdata.testscripts.DeleteWithParam;
+import io.mosip.testrig.apirig.masterdata.testscripts.SimplePost;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.restassured.response.Response;
 
@@ -40,7 +39,7 @@ public class UserHelper extends BaseTestCaseUtil {
 
 	public UserHelper() {
 		  super();
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);

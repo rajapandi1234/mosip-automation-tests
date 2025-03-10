@@ -177,6 +177,7 @@ public class PacketTemplateProvider {
 		}
 		JSONObject processMVEL = processMVEL(resident, idJson, process, contextSchemaDetail, contextKey);
 		idJson = processMVEL.toString();
+		
 		CommonUtil.write(Paths.get(ridFolder + ID_JSON), idJson.getBytes());
 		String metadataJson = generateMetaDataJson(resident, preregId, machineId, centerId, fileInfo, contextKey,
 				contextSchemaDetail);
@@ -239,6 +240,12 @@ public class PacketTemplateProvider {
 				}
 			}
 		}
+		//if the json is not under the identity element put inside identity
+		if(!json.has("identity")) {
+			JSONObject identityWrapper = new JSONObject();
+			identityWrapper.put("identity", json.toMap());
+			json = identityWrapper; // Reassign the updated JSON
+		}
 		return json;
 	}
 
@@ -251,7 +258,7 @@ public class PacketTemplateProvider {
 			if (!CommonUtil.isExists(contextSchemaDetail.getRequiredAttribs(), s.getId()))
 				continue;
 			for (MosipDocument doc : resident.getDocuments()) {
-				if (doc.getDocCategoryCode().toLowerCase().equals(s.getSubType().toLowerCase())) {
+				if (s.getSubType() != null && doc.getDocCategoryCode().toLowerCase().equals(s.getSubType().toLowerCase())) {
 					DocumentDto documentDto = new DocumentDto();
 					if (json.has(s.getId())) {
 						JSONObject formateJson = json.getJSONObject(s.getId());
@@ -311,7 +318,11 @@ public class PacketTemplateProvider {
 			RestClient.logInfo(contextKey, s.toJSONString());
 			String primVal = "";
 			String secVal = "";
-			if (s.getFieldCategory().equals(EVIDENCE) && (s.getInputRequired() || s.getRequired())) {
+			
+			if (s.getFieldCategory() != null && (
+				    (s.getInputRequired() != null && s.getInputRequired()) ||
+				    (s.getRequired() != null && s.getRequired())
+				) && s.getFieldCategory().equals(EVIDENCE))  {
 
 				if (s.getRequired() && s.getRequiredOn() != null && !s.getRequiredOn().isEmpty()) {
 
@@ -777,7 +788,7 @@ public class PacketTemplateProvider {
 	}
 
 	public static String generateDefaultAttributes(MosipIDSchema schemaItem, ResidentModel resident,
-			JSONObject identity) {
+			JSONObject identity, String contextKey) {
 		byte bytes[] = new byte[20];
 		rand.nextBytes(bytes);
 		String someVal = null;
@@ -788,7 +799,7 @@ public class PacketTemplateProvider {
 					String regexpr = v.getValidator();
 					if (regexpr != null && !regexpr.equals(""))
 						try {
-							someVal = CommonUtil.genStringAsperRegex(regexpr);
+							someVal = CommonUtil.genStringAsperRegex(regexpr,contextKey);
 						} catch (Exception e) {
 							logger.error(e.getMessage());
 						}
@@ -860,6 +871,8 @@ public class PacketTemplateProvider {
 				for (DynamicFieldModel dfm : dynaFields.get(primaryLanguage)) {
 					if (dfm.getIsActive() && dfm.getName().equals(s.getId())) {
 						primaryValue = dfm.getFieldVal().get(0).getCode();
+						if (s.getId().contains("residenceStatus"))
+						VariableManager.setVariableValue(contextKey, "ID_OBJECT-residenceStatus", primaryValue);
 						dfmPrim = dfm;
 						break;
 					}
@@ -870,6 +883,8 @@ public class PacketTemplateProvider {
 					for (DynamicFieldModel dfm1 : dynaFields.get(secLanguage)) {
 						if (dfm1.getIsActive() && dfm1.getName().equals(s.getId())) {
 							secValue = dfm1.getFieldVal().get(0).getCode();
+							if (s.getId().contains("residenceStatus"))
+							VariableManager.setVariableValue(contextKey, "ID_OBJECT-residenceStatus", secValue);
 							break;
 						}
 					}
@@ -943,13 +958,20 @@ public class PacketTemplateProvider {
 				identity.put(s.getId(), contextSchemaDetail.getSchemaVersion());
 				continue;
 			}
+			
+		    if (s.getId().contains("residenceStatus")) {
+				VariableManager.setVariableValue(contextKey, "ID_OBJECT-residenceStatus", resident.getResidentStatus().getCode());
+			}
 
 			if (updateFromAdditionalAttribute(identity, s, resident, contextKey)) {
 				continue;
 			}
 			if (processDynamicFields(s, identity, resident, contextKey))
 				continue;
-
+			if (s.getFieldCategory().equals("evidence") && s.getId().equals("nrcId") ) {
+				identity.put(s.getId(),resident.getNrcId().getNrcId());
+				continue;
+			}
 			if (s.getFieldCategory().equals("pvt") || s.getFieldCategory().equals("kyc")) {
 				String primaryValue = "";
 				String secValue = "";
@@ -988,9 +1010,8 @@ public class PacketTemplateProvider {
 						primaryValue = addrLines.getValue0();
 						secValue = addrLines.getValue1();
 					}
-				} else if (s.getSubType().toLowerCase().contains("residenceStatus")) {
+				} else if (s.getId().contains("residenceStatus")) {
 					primaryValue = resident.getResidentStatus().getCode();
-					VariableManager.setVariableValue(contextKey, "ID_OBJECT-residenceStatus", primaryValue);
 					secValue = primaryValue;
 				} else if (VariableManager.getVariableValue(contextKey, "emailId") != null
 						&& s.getId().equals(VariableManager.getVariableValue(contextKey, "emailId"))) {
@@ -1002,6 +1023,8 @@ public class PacketTemplateProvider {
 					secValue = primaryValue;
 				} else if (VariableManager.getVariableValue(contextKey, "individualBiometrics") != null
 						&& s.getId().equals(VariableManager.getVariableValue(contextKey, "individualBiometrics"))) {
+					if(!VariableManager.getVariableValue(contextKey, "skipBiometricClassificationFlag").toString().contentEquals("skipBiometricClassification"))
+					{
 					JSONObject o = new JSONObject();
 					o.put(FORMAT, CBEFF);
 					o.put(VERSION, 1.0f);
@@ -1010,7 +1033,7 @@ public class PacketTemplateProvider {
 					fileInfo.put(RID_FOLDER, v);
 					o.put(VALUE, s.getId() + BIO_CBEFF);
 					identity.put(s.getId(), o);
-
+					}
 					String outFile = fileInfo.get(RID_FOLDER)[0] + "/" + fileInfo.get(RID_FOLDER)[1];
 					try {
 						List<String> missAttribs = resident.getMissAttributes();
@@ -1130,7 +1153,6 @@ public class PacketTemplateProvider {
 							String docFile = doc.getDocs().get(0);
 							RestClient.logInfo(contextKey,
 									DOCFILE + docFile + DTYPE + s.getSubType() + CAT + s.getId());
-
 							JSONObject o = new JSONObject();
 							o.put(FORMAT, "pdf");
 							o.put("type", doc.getType().get(0).getDocTypeCode());
@@ -1140,12 +1162,11 @@ public class PacketTemplateProvider {
 							o.put(VALUE, s.getId());
 
 							identity.put(s.getId(), o);
-
 							String outFile = fileInfo.get(RID_FOLDER)[0] + "/" + fileInfo.get(RID_FOLDER)[1];
 							try {
 //								Files.copy(Paths.get(docFile), Paths.get(outFile));
+						   if(!VariableManager.getVariableValue(contextKey, "skipApplicantDocumentsFlag").toString().contentEquals("skipApplicantDocuments"))  // Applican documents missing in packet
 								CommonUtil.copyFileWithBuffer(Paths.get(docFile), Paths.get(outFile));
-
 							} catch (Exception e) {
 								logger.error(GENERATEIDJSONV2, e);
 							}
@@ -1158,7 +1179,7 @@ public class PacketTemplateProvider {
 						&& s.getId().equals(prop.getProperty("identitynumber"))) {
 					List<SchemaValidator> validators = s.getValidators();
 					if (validators != null) {
-						primaryValue = generateDefaultAttributes(s, resident, identity);
+						primaryValue = generateDefaultAttributes(s, resident, identity,contextKey);
 					} else {
 						primaryValue = resident.getId();
 					}
@@ -1187,7 +1208,7 @@ public class PacketTemplateProvider {
 					}
 
 				if (primaryValue == null || primaryValue.equals("")) {
-					primaryValue = generateDefaultAttributes(s, resident, identity);
+					primaryValue = generateDefaultAttributes(s, resident, identity, contextKey);
 					if (secLanguage != null) {
 						secValue = Translator.translate(secLanguage, primaryValue, contextKey);
 					}

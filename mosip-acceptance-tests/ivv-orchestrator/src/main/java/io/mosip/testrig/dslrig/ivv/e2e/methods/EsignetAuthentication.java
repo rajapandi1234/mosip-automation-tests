@@ -7,19 +7,18 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import io.mosip.testrig.apirig.admin.fw.util.AdminTestException;
-import io.mosip.testrig.apirig.admin.fw.util.TestCaseDTO;
-import io.mosip.testrig.apirig.authentication.fw.precon.JsonPrecondtion;
-import io.mosip.testrig.apirig.authentication.fw.util.AuthenticationTestException;
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
-import io.mosip.testrig.apirig.service.BaseTestCase;
-import io.mosip.testrig.apirig.testscripts.SimplePost;
+import io.mosip.testrig.apirig.dto.TestCaseDTO;
+import io.mosip.testrig.apirig.esignet.testscripts.SimplePost;
+import io.mosip.testrig.apirig.testrunner.JsonPrecondtion;
+import io.mosip.testrig.apirig.utils.AdminTestException;
+import io.mosip.testrig.apirig.utils.AuthenticationTestException;
+import io.mosip.testrig.apirig.testrunner.BaseTestCase;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.FeatureNotSupportedError;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
 import io.mosip.testrig.dslrig.ivv.orchestrator.GlobalConstants;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
 public class EsignetAuthentication extends BaseTestCaseUtil implements StepInterface {
 	static Logger logger = Logger.getLogger(EsignetAuthentication.class);
@@ -28,7 +27,7 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 	SimplePost authenticateUser = new SimplePost();
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
@@ -36,9 +35,7 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 
 	@Override
 	public void run() throws RigInternalError, FeatureNotSupportedError {
-		
-		// check if esignet is installed on the target system
-		if (ConfigManager.isInServiceNotDeployedList(GlobalConstants.ESIGNET)) {
+		if (dslConfigManager.isInServiceNotDeployedList(GlobalConstants.ESIGNET)) {
 			throw new FeatureNotSupportedError("eSignet is not deployed. Hence skipping the step");
 		}
 
@@ -58,24 +55,23 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 
 		TestCaseDTO test = (TestCaseDTO) testObj[0];
 
-		
 		if (step.getParameters().size() == 6) {
 			emailId = step.getParameters().get(3);
 			if (emailId.startsWith("$$")) {
 				emailId = step.getScenario().getVariables().get(emailId);
 			}
-			
-			if(emailId==null ||(emailId!=null && emailId.isBlank())) {
-				//in somecases Email Id is not passed so E-signet OTP Authentication is not supported
-				throw new FeatureNotSupportedError("Email id is Empty hence we cannot perform E-signet OTP Authentication");
-				
+
+			if (emailId == null || (emailId != null && emailId.isBlank())) {
+				throw new FeatureNotSupportedError(
+						"Email id is Empty hence we cannot perform E-signet OTP Authentication");
+
 			}
 
 		}
-		
+
 		if (step.getParameters() == null || step.getParameters().isEmpty() || step.getParameters().size() < 1) {
 			logger.error("transactionId parameter is  missing from DSL step");
-			this.hasError=true;
+			this.hasError = true;
 			throw new RigInternalError("transactionId paramter is  missing in step: " + step.getName());
 		} else {
 			transactionId1 = (String) step.getScenario().getOidcClientProp().get("transactionId1");
@@ -85,7 +81,7 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 
 		if (step.getParameters() == null || step.getParameters().isEmpty() || step.getParameters().size() < 1) {
 			logger.error("transa from DSL step");
-			this.hasError=true;
+			this.hasError = true;
 			throw new RigInternalError(
 					"transactionId parameter is  missingctionId paramter is  missing in step: " + step.getName());
 		} else {
@@ -94,7 +90,7 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 
 		}
 		if (step.getParameters().size() == 6 && step.getParameters().get(1).startsWith("$$")) {
-			uins = step.getParameters().get(1); //"e2e_IdpAuthentication($$transactionId1,$$uin,OTP,$$email,$$vid,$$transactionId2)"
+			uins = step.getParameters().get(1);
 			if (uins.startsWith("$$")) {
 				uins = step.getScenario().getVariables().get(uins);
 				uinList = new ArrayList<>(Arrays.asList(uins.split("@@")));
@@ -124,9 +120,6 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 			authType = step.getParameters().get(2);
 
 		}
-
-
-		
 
 		if (step.getParameters().size() == 6 && step.getParameters().get(2).contains("OTP")) {
 
@@ -183,37 +176,6 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 
 			}
 
-			for (String vid : vidList) {
-
-				input = JsonPrecondtion.parseAndReturnJsonContent(input, transactionId2, "transactionId");
-
-				input = JsonPrecondtion.parseAndReturnJsonContent(input, vid, "individualId");
-
-				input = JsonPrecondtion.parseAndReturnJsonContent(input,
-						step.getScenario().getOidcClientProp().getProperty("urlEncodedResp2"), "encodedHash");
-
-				testForOtp.setInput(input);
-
-				if (idType.contains("VID") || idType.contains("vid")) {
-					casesListVID = authenticateUser.getYmlTestData(OtpUserYml);
-				}
-				if (casesListVID != null) {
-					for (Object object : casesListVID) {
-						test.setInput(input);
-						test = (TestCaseDTO) object;
-						try {
-							authenticateUser.test(testForOtp);
-						} catch (AuthenticationTestException e) {
-							logger.error(e.getMessage());
-						} catch (AdminTestException e) {
-							logger.error(e.getMessage());
-						}
-					}
-				}
-
-			}
-
-		}
 
 		for (String uin : uinList) {
 
@@ -244,7 +206,7 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 			if (casesListUIN != null) {
 				for (Object object : casesListUIN) {
 					test = (TestCaseDTO) object;
-					String input = test.getInput();
+					 input = test.getInput();
 					input = JsonPrecondtion.parseAndReturnJsonContent(input, transactionId1, "transactionId");
 					input = JsonPrecondtion.parseAndReturnJsonContent(input,
 							step.getScenario().getOidcClientProp().getProperty("urlEncodedResp1"), "encodedHash");
@@ -265,6 +227,38 @@ public class EsignetAuthentication extends BaseTestCaseUtil implements StepInter
 			}
 
 		}
+		for (String vid : vidList) {
+			input = testForOtp.getInput();
+			
+			input = JsonPrecondtion.parseAndReturnJsonContent(input, transactionId2, "transactionId");
+
+			input = JsonPrecondtion.parseAndReturnJsonContent(input, vid, "individualId");
+
+			input = JsonPrecondtion.parseAndReturnJsonContent(input,
+					step.getScenario().getOidcClientProp().getProperty("urlEncodedResp2"), "encodedHash");
+
+			testForOtp.setInput(input);
+
+			if (idType.contains("VID") || idType.contains("vid")) {
+				casesListVID = authenticateUser.getYmlTestData(OtpUserYml);
+			}
+			if (casesListVID != null) {
+				for (Object object : casesListVID) {
+					test.setInput(input);
+					test = (TestCaseDTO) object;
+					try {
+						authenticateUser.test(testForOtp);
+					} catch (AuthenticationTestException e) {
+						logger.error(e.getMessage());
+					} catch (AdminTestException e) {
+						logger.error(e.getMessage());
+					}
+				}
+			}
+
+		}
+
+	}
 		for (String vid : vidList) {
 
 			if (idType.contains("VID") || idType.contains("vid")) {

@@ -4,19 +4,18 @@ import java.util.HashMap;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import io.mosip.testrig.apirig.kernel.util.ConfigManager;
 import io.mosip.testrig.dslrig.ivv.core.base.StepInterface;
 import io.mosip.testrig.dslrig.ivv.core.exceptions.RigInternalError;
 import io.mosip.testrig.dslrig.ivv.e2e.constant.E2EConstants;
 import io.mosip.testrig.dslrig.ivv.orchestrator.BaseTestCaseUtil;
+import io.mosip.testrig.dslrig.ivv.orchestrator.dslConfigManager;
 
 public class UpdateMachineInPrereqData extends BaseTestCaseUtil implements StepInterface {
 
 	static Logger logger = Logger.getLogger(UpdateMachineInPrereqData.class);
 
 	static {
-		if (ConfigManager.IsDebugEnabled())
+		if (dslConfigManager.IsDebugEnabled())
 			logger.setLevel(Level.ALL);
 		else
 			logger.setLevel(Level.ERROR);
